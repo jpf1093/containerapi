@@ -9,10 +9,8 @@ const documentation = {
 
     servers: [
     {
-        url: process.env.API_URL || 'http://localhost:3000',
-        description: process.env.API_URL
-            ? 'Servidor de produção'
-            : 'Servidor de desenvolvimento'
+        url: 'https://containerapi-jjdb.onrender.com',
+        description: 'Servidor de produção'
     }
 ],
 
