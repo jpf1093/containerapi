@@ -8,11 +8,13 @@ const documentation = {
     },
 
     servers: [
-        {
-            url: 'http://localhost:3000',
-            description: 'Servidor de desenvolvimento'
-        }
-    ],
+    {
+        url: process.env.API_URL || 'http://localhost:3000',
+        description: process.env.API_URL
+            ? 'Servidor de produção'
+            : 'Servidor de desenvolvimento'
+    }
+],
 
     tags: [
         {
