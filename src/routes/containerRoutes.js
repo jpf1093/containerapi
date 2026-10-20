@@ -54,8 +54,6 @@ router.delete(
 // Atualizar nível de preenchimento
 router.patch(
     '/:id/fill-level',
-    authMiddleware,
-    adminMiddleware,
     ContainerController.updateFillLevel
 );
 
