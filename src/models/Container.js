@@ -2,7 +2,7 @@ const db = require("../config/database");
 
 class Container {
   static async findAll() {
-  const [rows] = await db.query(`
+    const [rows] = await db.query(`
     SELECT
       id,
       code,
@@ -16,12 +16,12 @@ class Container {
     ORDER BY id DESC
   `);
 
-  return rows;
-}
+    return rows;
+  }
 
-static async findById(id) {
-  const [rows] = await db.query(
-    `
+  static async findById(id) {
+    const [rows] = await db.query(
+      `
     SELECT
       id,
       code,
@@ -34,11 +34,11 @@ static async findById(id) {
     FROM containers
     WHERE id = ?
     `,
-    [id],
-  );
+      [id],
+    );
 
-  return rows[0];
-}
+    return rows[0];
+  }
 
   static async findByCode(code) {
     const [rows] = await db.query(
@@ -82,13 +82,45 @@ static async findById(id) {
   }
 
   static async delete(id) {
-    const [result] = await db.query(
-      `DELETE FROM containers
-             WHERE id = ?`,
-      [id],
-    );
+    const connection = await db.getConnection();
 
-    return result.affectedRows;
+    try {
+      await connection.beginTransaction();
+
+      const [containers] = await connection.query(
+        `SELECT id
+             FROM containers
+             WHERE id = ?
+             FOR UPDATE`,
+        [id],
+      );
+
+      if (containers.length === 0) {
+        await connection.rollback();
+        return 0;
+      }
+
+      await connection.query(
+        `DELETE FROM container_allocations
+             WHERE container_id = ?`,
+        [id],
+      );
+
+      const [result] = await connection.query(
+        `DELETE FROM containers
+             WHERE id = ?`,
+        [id],
+      );
+
+      await connection.commit();
+
+      return result.affectedRows;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
 
   static async updateStatus(id, status) {
@@ -106,19 +138,19 @@ static async findById(id) {
     let fillStatus;
 
     if (fillLevel <= 24) {
-        fillStatus = 'VAZIO';
+      fillStatus = "VAZIO";
     } else if (fillLevel <= 49) {
-        fillStatus = 'BAIXO';
+      fillStatus = "BAIXO";
     } else if (fillLevel <= 74) {
-        fillStatus = 'MEDIO';
+      fillStatus = "MEDIO";
     } else if (fillLevel <= 89) {
-        fillStatus = 'ALTO';
+      fillStatus = "ALTO";
     } else {
-        fillStatus = 'CHEIO';
+      fillStatus = "CHEIO";
     }
 
     const [result] = await db.query(
-        `
+      `
         UPDATE containers
         SET
             fill_level = ?,
@@ -126,11 +158,11 @@ static async findById(id) {
             last_reading_at = NOW()
         WHERE id = ?
         `,
-        [fillLevel, fillStatus, id]
+      [fillLevel, fillStatus, id],
     );
 
     return result.affectedRows;
-}
+  }
 }
 
 module.exports = Container;
